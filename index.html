@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PostCalc - India Post Savings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div id="app-wrapper">
+        <header>
+            <div class="header-left">
+                <div class="header-icon">₹</div>
+                <div class="header-text">
+                    <h1>POSTCALC</h1>
+                    <p>INDIA POST SAVINGS CALCULATOR</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="card input-section">
+                <h3>Select Scheme</h3>
+                <select id="schemeSelector">
+                    <option value="">-- Choose Saving Scheme --</option>
+                    <option value="sb">SB - Savings Account</option>
+                    <option value="rd">RD - Recurring Deposit</option>
+                    <option value="ssa">SSA - Sukanya Samriddhi Account</option>
+                    <option value="td">TD - Time Deposit</option>
+                    <option value="mis">MIS - Monthly Income Scheme</option>
+                    <option value="ppf">PPF - Public Provident Fund</option>
+                    <option value="scss">SCSS - Senior Citizen Savings Scheme</option>
+                    <option value="kvp">KVP - Kisan Vikas Patra</option>
+                    <option value="nsc">NSC - National Savings Certificate</option>
+                </select>
+                
+                <button id="btnInfo" class="btn-info-inline hidden" aria-label="Scheme Rules">
+                    <span>ℹ️ View Scheme Details</span>
+                </button>
+            </div>
+
+            <div class="card hidden" id="inputCard">
+                <h3>Enter Details</h3>
+                
+                <div style="margin-bottom: 20px;">
+                    <label>Date of Opening / First Deposit</label>
+                    <input type="date" id="dateOpen">
+                    <small style="color:#777; font-size: 0.75rem;">(Used to calculate interest deadlines)</small>
+                </div>
+
+                <form id="calcForm">
+                    <div id="input-sb" class="input-group hidden">
+                        <label>Minimum Monthly Balance (₹)</label>
+                        <input type="number" id="sbDeposit" value="5000" oninput="numToWord(this.value, 'word-sb')">
+                        <div id="word-sb" class="word-display">Five Thousand Rupees Only</div>
+                        <label>Duration (Years)</label><input type="number" id="sbTenure" value="1">
+                    </div>
+
+                    <div id="input-rd" class="input-group hidden">
+                        <label>Monthly Deposit (₹)</label>
+                        <input type="number" id="rdDeposit" value="5000" step="10" oninput="numToWord(this.value, 'word-rd')">
+                        <div id="word-rd" class="word-display">Five Thousand Rupees Only</div>
+                    </div>
+
+                    <div id="input-ssa" class="input-group hidden" data-mode="annual">
+                        <label>Girl's Age (Years)</label>
+                        <input type="number" id="ssaAge" value="1" max="10" placeholder="0-10 Years">
+                        <label>Deposit Frequency</label>
+                        <div class="toggle-row">
+                            <div class="toggle-btn active" onclick="setSSAMode('annual')">Annual</div>
+                            <div class="toggle-btn" onclick="setSSAMode('monthly')">Monthly</div>
+                        </div>
+                        <div id="ssa-annual-inputs">
+                            <label>Annual Deposit (₹)</label>
+                            <input type="number" id="ssaDepositAnnual" value="50000" oninput="numToWord(this.value, 'word-ssa-a')">
+                            <div id="word-ssa-a" class="word-display">Fifty Thousand Rupees Only</div>
+                        </div>
+                        <div id="ssa-monthly-inputs" class="hidden">
+                            <label>Monthly Deposit (₹)</label>
+                            <input type="number" id="ssaDepositMonthly" value="2000" oninput="numToWord(this.value, 'word-ssa-m')">
+                            <div id="word-ssa-m" class="word-display">Two Thousand Rupees Only</div>
+                        </div>
+                    </div>
+
+                    <div id="input-ppf" class="input-group hidden" data-mode="annual">
+                        <label>Deposit Frequency</label>
+                        <div class="toggle-row">
+                            <div class="toggle-btn active" onclick="setPPFMode('annual')">Annual</div>
+                            <div class="toggle-btn" onclick="setPPFMode('monthly')">Monthly</div>
+                        </div>
+                        <div id="ppf-annual-inputs">
+                            <label>Annual Deposit (₹)</label>
+                            <input type="number" id="ppfDepositAnnual" value="100000" oninput="numToWord(this.value, 'word-ppf-a')">
+                            <div id="word-ppf-a" class="word-display">One Lakh Rupees Only</div>
+                        </div>
+                        <div id="ppf-monthly-inputs" class="hidden">
+                            <label>Monthly Deposit (₹)</label>
+                            <input type="number" id="ppfDepositMonthly" value="5000" oninput="numToWord(this.value, 'word-ppf-m')">
+                            <div id="word-ppf-m" class="word-display">Five Thousand Rupees Only</div>
+                        </div>
+                    </div>
+
+                    <div id="input-td" class="input-group hidden">
+                        <label>Deposit Amount (₹)</label>
+                        <input type="number" id="tdDeposit" value="100000" oninput="numToWord(this.value, 'word-td')">
+                        <div id="word-td" class="word-display">One Lakh Rupees Only</div>
+                        <label>Tenure</label>
+                        <select id="tdTenure">
+                            <option value="1">1 Year (6.9%)</option>
+                            <option value="2">2 Years (7.0%)</option>
+                            <option value="3">3 Years (7.1%)</option>
+                            <option value="5" selected>5 Years (7.5%)</option>
+                        </select>
+                    </div>
+
+                    <div id="input-mis" class="input-group hidden">
+                        <label>Account Type</label>
+                        <div class="toggle-row">
+                            <div class="toggle-btn active" onclick="setMISMode('single')">Single (Max 9L)</div>
+                            <div class="toggle-btn" onclick="setMISMode('joint')">Joint (Max 15L)</div>
+                        </div>
+                        <label>Lump Sum Deposit (₹)</label>
+                        <input type="number" id="misDeposit" value="500000" oninput="numToWord(this.value, 'word-mis')">
+                        <div id="word-mis" class="word-display">Five Lakh Rupees Only</div>
+                    </div>
+
+                    <div id="input-scss" class="input-group hidden">
+                        <label>Lump Sum Deposit (₹)</label>
+                        <input type="number" id="scssDeposit" value="1000000" oninput="numToWord(this.value, 'word-scss')">
+                        <div id="word-scss" class="word-display">Ten Lakh Rupees Only</div>
+                    </div>
+
+                    <div id="input-nsc" class="input-group hidden">
+                        <label>Deposit Amount (₹)</label>
+                        <input type="number" id="nscDeposit" value="100000" oninput="numToWord(this.value, 'word-nsc')">
+                        <div id="word-nsc" class="word-display">One Lakh Rupees Only</div>
+                    </div>
+
+                    <div id="input-kvp" class="input-group hidden">
+                        <label>Deposit Amount (₹)</label>
+                        <input type="number" id="kvpDeposit" value="50000" oninput="numToWord(this.value, 'word-kvp')">
+                        <div id="word-kvp" class="word-display">Fifty Thousand Rupees Only</div>
+                    </div>
+                </form>
+                
+                <div id="warningBox" class="warning-box"></div>
+                <button class="btn btn-calc" id="btnCalculate">Calculate</button>
+            </div>
+
+            <div class="card hidden" id="resultsCard">
+                <div class="statement-header">
+                    <div class="st-left">
+                        <h2 id="printSchemeName">Scheme Name</h2>
+                        <span class="st-sub">Interest Estimate Statement</span>
+                    </div>
+                    <div class="st-right">
+                        <span id="printDate">Date: </span>
+                    </div>
+                </div>
+
+                <h3 class="res-title">Summary</h3>
+                <div class="summary">
+                    <div class="summary-item">
+                        <span class="lbl">Total Deposit</span>
+                        <span class="val" id="resTotalDep">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="lbl">Total Interest</span>
+                        <span class="val highlight" id="resTotalInt">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="lbl">Maturity Amount</span>
+                        <span class="val" id="resMaturity">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="lbl">Maturity Date</span>
+                        <span class="val" id="resMatDate">-</span>
+                    </div>
+                    <div class="summary-item hidden" id="rowPayout">
+                        <span class="lbl">Regular Payout</span>
+                        <span class="val" id="resPayout">-</span>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="resTable">
+                        <thead id="resHead"></thead>
+                        <tbody id="resBody"></tbody>
+                    </table>
+                </div>
+
+                <p id="disclaimer">
+                    * Interest calculated based on official Department of Posts rules (5th/10th day logic applies). Actual results may vary.
+                </p>
+                
+                <div class="footer-brand">Designed By 𝐂𝐇𝐄𝐓@𝐍 𝐏@𝐓𝐈𝐋</div>
+
+                <div class="download-actions">
+                    <button class="btn btn-download btn-share" id="btnShare">
+                        🚀 Share / Save Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-footer">Designed By 𝐂𝐇𝐄𝐓@𝐍 𝐏@𝐓𝐈𝐋</div>
+
+        <div class="modal-overlay" id="infoModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Scheme Details</h3>
+                    <button class="modal-close" id="closeInfo">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="ruleContent" class="rule-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+    </html>
