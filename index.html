@@ -55,35 +55,71 @@
             </div>
 
             <div id="section-insurance" class="card input-section hidden">
-                <h3>Postal Life Insurance</h3>
+                <h3 style="border:none; margin-bottom:15px; color:#333;">Postal Life Insurance</h3>
                 
-                <label>Select Plan</label>
                 <div class="pli-toggle-wrapper">
-                    <div class="pli-opt active" onclick="setPLIType('pli-ea')">Santosh (Endowment)</div>
-                    <div class="pli-opt" onclick="setPLIType('pli-wla')">Suraksha (Whole Life)</div>
+                    <div class="pli-opt active" onclick="setPLIType('pli-ea')">PLI</div>
+                    <div class="pli-opt" onclick="setPLIType('rpli-ea')">RPLI</div>
                 </div>
 
-                <label>Insurant Date of Birth <span style="color:red">*</span> <span id="ageBadge" class="hidden"></span></label>
-                <input type="date" id="pliDOB" onchange="updateAgeBadge()">
-                <small style="color:#777; font-size:0.7rem;">Calculates 'Age Next Birthday' (ANB)</small>
+                <div class="android-input-box">
+                    <label>Select Plan</label>
+                    <select id="pliProduct" style="border:none; padding:0; font-weight:600; width:100%; background:white;">
+                        <option value="ea">Santosh (Endowment)</option>
+                        </select>
+                </div>
 
-                <label>Sum Assured (₹)</label>
-                <input type="number" id="pliSumAssured" value="500000" step="10000" oninput="numToWord(this.value, 'word-pli')">
+                <label style="margin-top:15px;">Insurant DOB <span style="color:red">*</span></label>
+                <div class="input-with-icon">
+                    <input type="date" id="pliDOB">
+                    <span class="icon">📅</span>
+                </div>
+
+                <label style="margin-top:15px;">Sum Assured (₹)</label>
+                <div class="input-with-icon">
+                    <input type="number" id="pliSumAssured" value="500000" step="10000" oninput="numToWord(this.value, 'word-pli')">
+                </div>
                 <div id="word-pli" class="word-display">Five Lakh Rupees Only</div>
-
-                <label>Age at Maturity</label>
-                <select id="pliMatAge">
-                    <option value="35">35 Years</option>
-                    <option value="40">40 Years</option>
-                    <option value="50">50 Years</option>
-                    <option value="55">55 Years</option>
-                    <option value="58">58 Years</option>
-                    <option value="60" selected>60 Years</option>
-                    <option value="80">80 Years (Suraksha)</option>
-                </select>
                 
-                <div id="pliWarning" class="warning-box"></div>
-                <button class="btn btn-calc" id="btnCalcPLI">Calculate Premium</button>
+                <button class="btn btn-calc" id="btnCalcPLI" style="margin-top:25px; border-radius:30px;">GET QUOTE</button>
+            </div>
+
+            <div id="pliResultCard" class="card hidden">
+                <div class="statement-header">
+                    <h2 style="color:var(--primary); font-size:1.2rem; margin:0;">Premium Table</h2>
+                    <button onclick="closePLIResult()" style="background:none; border:none; font-size:2rem; line-height:1; cursor:pointer; color:#777;">×</button>
+                </div>
+                <div style="font-size:0.8rem; color:#666; margin-bottom:10px;">
+                    Age Next Birthday: <span id="resAnb" style="font-weight:bold; color:#333;">-</span>
+                </div>
+
+                <div class="freq-tabs">
+                    <div class="f-tab active" onclick="updateFreq(1)">Monthly</div>
+                    <div class="f-tab" onclick="updateFreq(3)">Quarterly</div>
+                    <div class="f-tab" onclick="updateFreq(6)">Half Yearly</div>
+                    <div class="f-tab" onclick="updateFreq(12)">Yearly</div>
+                </div>
+
+                <div class="table-wrapper" style="margin-top:15px;">
+                    <table id="pliTable" class="pdf-style-table">
+                        <thead>
+                            <tr>
+                                <th>Mat Age</th>
+                                <th>Term</th>
+                                <th>Premium</th>
+                                <th>Rebate</th>
+                                <th>Net Pay</th>
+                                <th>Bonus</th>
+                                <th>Maturity</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pliTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div style="text-align:center; margin-top:15px;">
+                    <button class="btn btn-calc" onclick="captureAndShare()">🚀 Share Quote</button>
+                </div>
             </div>
 
             <div class="card hidden" id="inputCard">
@@ -266,4 +302,4 @@
     </div>
     <script src="script.js"></script>
 </body>
-                                </html>
+    </html>
