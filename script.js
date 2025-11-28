@@ -610,3 +610,81 @@ function showWarn(m) {
 function hideWarn() { 
     document.getElementById('warningBox').style.display = 'none'; 
            }
+
+/* =========================================
+   NEW PART: TABS & PLI CONTROLLER
+   ========================================= */
+
+// 1. Tab Switcher
+function switchTab(tab) {
+    // UI Toggles
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+
+    if (tab === 'savings') {
+        document.getElementById('section-savings').classList.remove('hidden');
+        document.getElementById('section-insurance').classList.add('hidden');
+        document.getElementById('inputCard').classList.add('hidden'); 
+        document.getElementById('resultsCard').classList.add('hidden');
+    } else {
+        document.getElementById('section-savings').classList.add('hidden');
+        document.getElementById('section-insurance').classList.remove('hidden');
+        document.getElementById('inputCard').classList.add('hidden');
+        document.getElementById('resultsCard').classList.add('hidden');
+    }
+}
+
+// 2. PLI Logic Controller
+let currentPLIScheme = 'pli-ea';
+
+function setPLIType(type) {
+    currentPLIScheme = type;
+    document.querySelectorAll('.pli-opt').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function updateAgeBadge() {
+    const dStr = document.getElementById('pliDOB').value;
+    if(!dStr) return;
+    const d = new Date(dStr);
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    
+    // ANB Logic
+    const anb = age + 1;
+    const badge = document.getElementById('ageBadge');
+    badge.innerText = `Postal Age: ${anb}`;
+    badge.classList.remove('hidden');
+}
+
+// 3. PLI Calculate Button
+document.getElementById('btnCalcPLI').addEventListener('click', () => {
+    const dob = document.getElementById('pliDOB').value;
+    const sa = parseFloat(document.getElementById('pliSumAssured').value);
+    const matAge = parseInt(document.getElementById('pliMatAge').value);
+    const warn = document.getElementById('pliWarning');
+
+    if(!dob) { warn.innerText = "⚠️ Select Date of Birth"; warn.style.display='block'; return; }
+    if(!sa || sa < 20000) { warn.innerText = "⚠️ Minimum Sum Assured is ₹20,000"; warn.style.display='block'; return; }
+    warn.style.display='none';
+
+    // Call Engine
+    const res = PLI_Engine.calculate(currentPLIScheme, dob, sa, matAge);
+    
+    if(res.error) {
+        warn.innerText = "⚠️ " + res.error; warn.style.display='block';
+    } else {
+        // Reuse your existing renderSimple function
+        renderSimple(res);
+        
+        // Patch Labels for Insurance
+        document.getElementById('printSchemeName').innerText = PLI_DATA[currentPLIScheme].name;
+        document.querySelector('.summary-item:nth-child(1) .lbl').innerText = "Monthly Premium";
+        document.getElementById('resTotalDep').innerText = '₹' + Math.round(res.dep);
+        
+        document.querySelector('.summary-item:nth-child(2) .lbl').innerText = "Total Bonus";
+        // Maturity is already set by renderSimple
+    }
+});
