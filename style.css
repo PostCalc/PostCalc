@@ -113,3 +113,200 @@ td:first-child { text-align: center; background: #fafafa; font-weight: 500; bord
 .modal-header h3 { margin: 0; color: var(--primary); font-size: 1.3rem; }
 .modal-close { background: none; border: none; font-size: 2rem; color: #999; cursor: pointer; line-height: 1; }
 @media (min-width: 600px) { .modal-overlay { align-items: center; } .modal-content { border-radius: 12px; width: 90%; transform: scale(0.95); } .modal-overlay.show .modal-content { transform: scale(1); } }
+/* =========================================
+   PART 4: PLI / RPLI & TAB STYLES (NEW)
+   ========================================= */
+
+/* --- 1. NAVIGATION TABS (Option 1: Clean Row) --- */
+.nav-tabs {
+    display: flex;
+    gap: 15px;
+    padding: 15px 20px 0; /* Top padding creates gap from header */
+    margin-bottom: 0;
+}
+
+.tab {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: #e0e0e0; /* Inactive Grey */
+    color: #666;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 10px 10px 0 0; /* Top corners rounded like folder tabs */
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab.active {
+    background: #ffffff;
+    color: var(--primary);
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.05); /* Lift effect */
+    position: relative;
+    z-index: 10; /* Sits above the card */
+}
+
+/* --- 2. PLI TOGGLE (Pill Switch) --- */
+.pli-toggle-wrapper {
+    display: flex;
+    background: #f0f0f0;
+    padding: 5px;
+    border-radius: 50px;
+    margin-bottom: 20px;
+}
+
+.pli-opt {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    border-radius: 40px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.pli-opt.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(214, 40, 40, 0.3);
+}
+
+/* --- 3. ANDROID STYLE INPUTS --- */
+.android-input-box {
+    position: relative;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 0;
+    margin-top: 20px;
+    background: #fff;
+    height: 54px;
+    display: flex;
+    align-items: center;
+}
+
+/* Floating Label on Border */
+.android-input-box label {
+    position: absolute;
+    top: -9px;
+    left: 12px;
+    background: #ffffff; /* Must be white to hide the line */
+    padding: 0 5px;
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 10;
+    margin: 0; /* Reset global margin */
+}
+
+.android-input-box select {
+    border: none;
+    width: 100%;
+    height: 100%;
+    padding: 0 15px;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+/* Input Fields with Icons */
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon input {
+    padding-right: 40px; /* Make room for icon */
+}
+
+.input-with-icon .icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* --- 4. RESULT CARD & PDF TABLE --- */
+/* Frequency Tabs */
+.freq-tabs {
+    display: flex;
+    background: #f5f5f5;
+    padding: 5px;
+    border-radius: 8px;
+    gap: 5px;
+    margin: 15px 0;
+}
+
+.f-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 0.75rem;
+    color: #666;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.f-tab.active {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* The PDF Table Style */
+.pdf-style-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    min-width: 650px; /* Forces scroll on mobile */
+}
+
+.pdf-style-table th {
+    background-color: #FFEBEE;
+    color: #B71C1C;
+    border: 1px solid #FFCDD2;
+    padding: 10px 5px;
+    text-align: center;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.pdf-style-table td {
+    border: 1px solid #eee;
+    padding: 10px 5px;
+    text-align: right;
+    white-space: nowrap;
+    color: #333;
+}
+
+.pdf-style-table tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* Highlight Net Premium Column */
+.pdf-style-table td:nth-child(5) {
+    background-color: #FFF3E0;
+    color: #D84315;
+    font-weight: 700;
+    border-left: 1px solid #FFE0B2;
+    border-right: 1px solid #FFE0B2;
+}
+
+/* Result Card Animation */
+#pliResultCard {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+    }
