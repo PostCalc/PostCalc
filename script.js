@@ -612,106 +612,125 @@ function hideWarn() {
            }
 
 /* =========================================
-   PART 3: PLI / RPLI CONTROLLER (New)
+   PART 3: PLI / RPLI CONTROLLER (FIXED)
    ========================================= */
 
-let currentPLIScheme = 'pli-ea'; // Default Plan
-let currentPLIData = null;       // Stores user input for frequency switching
+// Define global variables
+var currentPLIScheme = 'pli-ea'; 
+var currentPLIData = null; 
 
-// --- 1. TAB SWITCHER (Savings vs Insurance) ---
-function switchTab(tab) {
-    // UI Toggle
+/* --- 1. GLOBAL FUNCTIONS (So HTML onclick works) --- */
+
+window.switchTab = function(tab) {
+    // 1. Toggle Tabs
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
 
+    // 2. Toggle Sections
     if (tab === 'savings') {
         document.getElementById('section-savings').classList.remove('hidden');
         document.getElementById('section-insurance').classList.add('hidden');
-        document.getElementById('inputCard').classList.add('hidden'); // Reset old inputs
-        document.getElementById('resultsCard').classList.add('hidden'); // Reset old results
-        document.getElementById('pliResultCard').classList.add('hidden'); // Hide PLI results
+        
+        // Hide PLI Results, Show Savings inputs if they were active
+        document.getElementById('pliResultCard').classList.add('hidden'); 
+        document.getElementById('inputCard').classList.add('hidden'); // Reset inputs
+        document.getElementById('resultsCard').classList.add('hidden'); 
     } else {
         document.getElementById('section-savings').classList.add('hidden');
         document.getElementById('section-insurance').classList.remove('hidden');
+        
+        // Hide Savings Results
         document.getElementById('inputCard').classList.add('hidden');
         document.getElementById('resultsCard').classList.add('hidden');
-        document.getElementById('pliResultCard').classList.add('hidden');
     }
-}
+};
 
-// --- 2. PLI TYPE TOGGLE (Santosh/Suraksha/RPLI) ---
-function setPLIType(type) {
+window.setPLIType = function(type) {
     currentPLIScheme = type;
-    // Visual Update for Pill Toggle
+    // Visual Update
     document.querySelectorAll('.pli-opt').forEach(el => el.classList.remove('active'));
     event.target.classList.add('active');
-}
+};
 
-// --- 3. CALCULATE BUTTON LOGIC ---
-document.getElementById('btnCalcPLI').addEventListener('click', () => {
-    const dob = document.getElementById('pliDOB').value;
-    const sa = parseFloat(document.getElementById('pliSumAssured').value);
-    
-    // Validation
-    if(!dob) { alert("Please select Date of Birth"); return; }
-    if(!sa || sa < 20000) { alert("Minimum Sum Assured is ₹20,000"); return; }
+window.closePLIResult = function() {
+    document.getElementById('pliResultCard').classList.add('hidden');
+    document.getElementById('section-insurance').classList.remove('hidden');
+};
 
-    // 1. Generate Table (Default to Monthly Mode = 1)
-    const result = PLI_Engine.generateTable(currentPLIScheme, dob, sa, 1);
-    
-    if(result.error) {
-        alert(result.error); return;
-    }
-
-    // 2. Store Data (So we can switch frequency later without re-typing)
-    currentPLIData = { dob: dob, sa: sa, rawResult: result };
-    
-    // 3. Update UI
-    document.getElementById('resAnb').innerText = result.anb + " Years";
-    renderPLITable(result.rows);
-
-    // 4. Show Result Card
-    document.getElementById('section-insurance').classList.add('hidden'); // Hide Input
-    document.getElementById('pliResultCard').classList.remove('hidden');  // Show Table
-});
-
-// --- 4. FREQUENCY TABS (Monthly / Quarterly / Yearly) ---
-function updateFreq(freq) {
+window.updateFreq = function(freq) {
     if(!currentPLIData) return;
 
     // UI Toggle
     document.querySelectorAll('.f-tab').forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
 
-    // Re-Calculate Table with Multiplier
-    const result = PLI_Engine.generateTable(currentPLIScheme, currentPLIData.dob, currentPLIData.sa, freq);
-    renderPLITable(result.rows);
-}
+    // Re-Calculate
+    if(typeof PLI_Engine !== 'undefined') {
+        const result = PLI_Engine.generateTable(currentPLIScheme, currentPLIData.dob, currentPLIData.sa, freq);
+        renderPLITable(result.rows);
+    }
+};
 
-// --- 5. RENDER TABLE (Inject HTML) ---
+/* --- 2. EVENT LISTENERS (Wait for Load) --- */
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // Attach Click Event to "GET QUOTE" Button
+    const btnPLI = document.getElementById('btnCalcPLI');
+    if(btnPLI) {
+        btnPLI.addEventListener('click', () => {
+            const dob = document.getElementById('pliDOB').value;
+            const sa = parseFloat(document.getElementById('pliSumAssured').value);
+            
+            // Validation
+            if(!dob) { alert("Please select Date of Birth"); return; }
+            if(!sa || sa < 20000) { alert("Minimum Sum Assured is ₹20,000"); return; }
+
+            // Check if Engine is loaded
+            if(typeof PLI_Engine === 'undefined') {
+                alert("Error: pli-calc.js not loaded!"); return;
+            }
+
+            // Generate Table (Monthly Default)
+            const result = PLI_Engine.generateTable(currentPLIScheme, dob, sa, 1);
+            
+            if(result.error) {
+                alert(result.error); return;
+            }
+
+            // Store Data & Render
+            currentPLIData = { dob: dob, sa: sa, rawResult: result };
+            document.getElementById('resAnb').innerText = result.anb + " Years";
+            renderPLITable(result.rows);
+
+            // Show Result
+            document.getElementById('section-insurance').classList.add('hidden');
+            document.getElementById('pliResultCard').classList.remove('hidden');
+        });
+    }
+});
+
+/* --- 3. HELPER: RENDER TABLE --- */
 function renderPLITable(rows) {
     const tbody = document.getElementById('pliTableBody');
-    
+    if(!tbody) return;
+
     if(rows.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px;'>No eligible plans found for this Age.</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px;'>No eligible plans found.</td></tr>";
         return;
     }
+
+    // Helper to format currency
+    const fmt = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 
     tbody.innerHTML = rows.map(r => `
         <tr>
             <td style="text-align:center; font-weight:600;">${r.matAge}</td>
             <td style="text-align:center;">${r.term} Yrs</td>
-            <td>${Math.round(r.base).toLocaleString('en-IN')}</td>
-            <td>${Math.round(r.rebate).toLocaleString('en-IN')}</td>
-            <td>${Math.round(r.net).toLocaleString('en-IN')}</td>
-            <td>${Math.round(r.bonus).toLocaleString('en-IN')}</td>
-            <td>${Math.round(r.maturity).toLocaleString('en-IN')}</td>
+            <td>${fmt(r.base)}</td>
+            <td>${fmt(r.rebate)}</td>
+            <td>${fmt(r.net)}</td>
+            <td>${fmt(r.bonus)}</td>
+            <td>${fmt(r.maturity)}</td>
         </tr>
     `).join('');
-}
-
-// --- 6. CLOSE / RESET BUTTON ---
-function closePLIResult() {
-    document.getElementById('pliResultCard').classList.add('hidden');
-    document.getElementById('section-insurance').classList.remove('hidden');
-                     }
+       }
