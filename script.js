@@ -647,18 +647,18 @@ window.switchTab = function(tab) {
     }
 };
 
-/* --- SMART PLI TOGGLE --- */
+/* --- FIXED PLI TOGGLE LOGIC --- */
 window.setPLIType = function(type) {
     // 1. Detect Base Type (PLI or RPLI)
     let isRPLI = type.includes('rpli');
     
-    // 2. Update Toggle Visuals
+    // 2. Update Visual Toggle (Pill)
     document.querySelectorAll('.pli-opt').forEach(el => el.classList.remove('active'));
-    // Find which button was clicked based on 'type' logic
+    // Select the correct pill button
     let activeBtn = isRPLI ? document.querySelectorAll('.pli-opt')[1] : document.querySelectorAll('.pli-opt')[0];
     activeBtn.classList.add('active');
 
-    // 3. Update Dropdown Options
+    // 3. Update Dropdown Options Dynamically
     const select = document.getElementById('pliProduct');
     if(isRPLI) {
         select.innerHTML = `
@@ -675,65 +675,15 @@ window.setPLIType = function(type) {
     }
 };
 
-// Also add this listener to update 'currentPLIScheme' when dropdown changes
-document.getElementById('pliProduct').addEventListener('change', (e) => {
-    currentPLIScheme = e.target.value;
-});
-
-window.closePLIResult = function() {
-    document.getElementById('pliResultCard').classList.add('hidden');
-    document.getElementById('section-insurance').classList.remove('hidden');
-};
-
-window.updateFreq = function(freq) {
-    if(!currentPLIData) return;
-
-    // Update Frequency Tab Style
-    document.querySelectorAll('.f-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-
-    // Re-Calculate Table with new Frequency
-    if(typeof PLI_Engine !== 'undefined') {
-        const result = PLI_Engine.generateTable(currentPLIScheme, currentPLIData.dob, currentPLIData.sa, freq);
-        renderPLITable(result.rows);
+// Listener to update scheme when user changes dropdown
+document.addEventListener('DOMContentLoaded', () => {
+    const pliSelect = document.getElementById('pliProduct');
+    if(pliSelect) {
+        pliSelect.addEventListener('change', (e) => {
+            currentPLIScheme = e.target.value;
+        });
     }
-};
-
-/* --- 2. PLI EVENT LISTENERS --- */
-// We check if the button exists before adding listener to avoid errors
-const btnPLI = document.getElementById('btnCalcPLI');
-if(btnPLI) {
-    btnPLI.addEventListener('click', () => {
-        const dob = document.getElementById('pliDOB').value;
-        const sa = parseFloat(document.getElementById('pliSumAssured').value);
-        
-        // Validation
-        if(!dob) { alert("Please select Date of Birth"); return; }
-        if(!sa || sa < 20000) { alert("Minimum Sum Assured is ₹20,000"); return; }
-
-        // Check if Engine is loaded
-        if(typeof PLI_Engine === 'undefined') {
-            alert("Error: pli-calc.js not loaded!"); return;
-        }
-
-        // Generate Table (Monthly Default)
-        const result = PLI_Engine.generateTable(currentPLIScheme, dob, sa, 1);
-        
-        if(result.error) {
-            alert(result.error); return;
-        }
-
-        // Store Data & Render
-        currentPLIData = { dob: dob, sa: sa, rawResult: result };
-        document.getElementById('resAnb').innerText = result.anb + " Years";
-        renderPLITable(result.rows);
-
-        // Show Result
-        document.getElementById('section-insurance').classList.add('hidden');
-        document.getElementById('pliResultCard').classList.remove('hidden');
-    });
-}
-
+});
 /* --- 3. HELPER: RENDER PLI TABLE --- */
 function renderPLITable(rows) {
     const tbody = document.getElementById('pliTableBody');
