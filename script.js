@@ -611,44 +611,49 @@ function hideWarn() {
     document.getElementById('warningBox').style.display = 'none'; 
            }
 /* =========================================
-   PART 3: PLI / RPLI CONTROLLER (ADD THIS TO BOTTOM)
+   PART 3: PLI / RPLI CONTROLLER (DAK SEWA LOGIC)
    ========================================= */
 
 // Global Variables
 var currentPLIScheme = 'pli-ea'; 
 var currentPLIData = null; 
 
-/* --- 1. TAB SWITCHER (Savings vs Insurance) --- */
+/* --- 1. GLOBAL UI FUNCTIONS --- */
+
 window.switchTab = function(tab) {
+    // UI Toggle
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
 
+    // Section Toggle
     if (tab === 'savings') {
         document.getElementById('section-savings').classList.remove('hidden');
         document.getElementById('section-insurance').classList.add('hidden');
+        
+        // Hide PLI Result, Reset Savings
         document.getElementById('pliResultCard').classList.add('hidden'); 
         document.getElementById('inputCard').classList.add('hidden'); 
         document.getElementById('resultsCard').classList.add('hidden'); 
-        // Reset Savings Dropdown
         if(document.getElementById('schemeSelector')) document.getElementById('schemeSelector').value = "";
     } else {
         document.getElementById('section-savings').classList.add('hidden');
         document.getElementById('section-insurance').classList.remove('hidden');
+        
+        // Hide Savings Result
         document.getElementById('inputCard').classList.add('hidden');
         document.getElementById('resultsCard').classList.add('hidden');
     }
 };
 
-/* --- 2. PLI TOGGLE (Fixed Dropdown Logic) --- */
 window.setPLIType = function(type) {
     let isRPLI = type.includes('rpli');
     
-    // Update Pill Buttons
+    // 1. Visual Toggle (Pill)
     document.querySelectorAll('.pli-opt').forEach(el => el.classList.remove('active'));
     let activeBtn = isRPLI ? document.querySelectorAll('.pli-opt')[1] : document.querySelectorAll('.pli-opt')[0];
     if(activeBtn) activeBtn.classList.add('active');
 
-    // Update Dropdown Options Dynamically
+    // 2. Dynamic Dropdown Update (Fixes Gram Santosh Issue)
     const select = document.getElementById('pliProduct');
     if(select) {
         if(isRPLI) {
@@ -667,20 +672,21 @@ window.setPLIType = function(type) {
     }
 };
 
-/* --- 3. RESULTS & FREQUENCY --- */
 window.closePLIResult = function() {
     document.getElementById('pliResultCard').classList.add('hidden');
     document.getElementById('section-insurance').classList.remove('hidden');
 };
 
+/* --- 2. FREQUENCY & CALCULATION LOGIC --- */
+
 window.updateFreq = function(freq) {
     if(!currentPLIData) return;
-    
-    // Update Tab UI
+
+    // Visual Toggle for Freq Tabs
     document.querySelectorAll('.f-tab').forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
-    
-    // Re-Calculate Table
+
+    // Re-Calculate Table using stored data
     if(typeof PLI_Engine !== 'undefined') {
         const result = PLI_Engine.generateTable(currentPLIScheme, currentPLIData.dob, currentPLIData.sa, freq);
         renderPLITable(result.rows);
@@ -690,92 +696,93 @@ window.updateFreq = function(freq) {
 function renderPLITable(rows) {
     const tbody = document.getElementById('pliTableBody');
     if(!tbody) return;
-    
-    if(rows.length === 0) { 
-        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px;'>No eligible plans found.</td></tr>"; 
-        return; 
+
+    if(rows.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px;'>No eligible plans found.</td></tr>";
+        return;
     }
-    
+
     const fmt = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
-    
+
     tbody.innerHTML = rows.map(r => `
         <tr>
             <td style="text-align:center; font-weight:600;">${r.matAge}</td>
             <td style="text-align:center;">${r.term} Yrs</td>
             <td>${fmt(r.base)}</td>
             <td>${fmt(r.rebate)}</td>
-            <td>${fmt(r.net)}</td>
+            <td style="font-weight:700; color:#d62828; background:#fff8f8;">${fmt(r.net)}</td>
             <td>${fmt(r.bonus)}</td>
             <td>${fmt(r.maturity)}</td>
         </tr>
     `).join('');
 }
 
-/* --- 4. EVENT LISTENERS --- */
+/* --- 3. EVENT LISTENERS --- */
 document.addEventListener('DOMContentLoaded', () => {
     
-    // PLI Product Dropdown Change
+    // Dropdown Change Listener
     const pliSelect = document.getElementById('pliProduct');
     if(pliSelect) {
         pliSelect.addEventListener('change', (e) => { currentPLIScheme = e.target.value; });
     }
 
-    // GET QUOTE Button
+    // Main Calculate Button
     const btnPLI = document.getElementById('btnCalcPLI');
     if(btnPLI) {
         btnPLI.addEventListener('click', () => {
             const dob = document.getElementById('pliDOB').value;
             const sa = parseFloat(document.getElementById('pliSumAssured').value);
             
+            // Validations
             if(!dob) { alert("Please select Date of Birth"); return; }
             if(!sa || sa < 20000) { alert("Minimum Sum Assured is ₹20,000"); return; }
             
-            if(typeof PLI_Engine === 'undefined') { alert("Engine not loaded."); return; }
+            // Check Engine
+            if(typeof PLI_Engine === 'undefined') { alert("Engine not loaded! Check pli-calc.js"); return; }
             
-            // Calculate (Default Monthly)
+            // Generate Table (Default Monthly = 1)
             const result = PLI_Engine.generateTable(currentPLIScheme, dob, sa, 1);
+            
             if(result.error) { alert(result.error); return; }
             
-            // Store & Render
-            currentPLIData = { dob, sa, rawResult: result };
+            // Store Data for Freq Switching
+            currentPLIData = { dob: dob, sa: sa, rawResult: result };
+            
+            // Update UI
             document.getElementById('resAnb').innerText = result.anb + " Years";
             renderPLITable(result.rows);
             
-            // Switch View
+            // Show Result Card
             document.getElementById('section-insurance').classList.add('hidden');
             document.getElementById('pliResultCard').classList.remove('hidden');
         });
     }
 });
 
-/* --- 5. SMART SHARE FUNCTION (Handles Both Savings & Insurance) --- */
+/* --- 4. SMART SHARE FUNCTION (Merged) --- */
 window.captureAndShare = function() {
-    // Detect which card is visible
+    // Detect active card
     const isPLI = !document.getElementById('pliResultCard').classList.contains('hidden');
     const sourceId = isPLI ? 'pliResultCard' : 'resultsCard';
     const source = document.getElementById(sourceId);
     
-    // Find the active button to show "Processing"
+    // Find button
     let btn = isPLI ? document.querySelector('#pliResultCard .btn-calc') : document.getElementById('btnShare');
-    // Fallback search
     if(!btn && isPLI) btn = document.querySelector('button[onclick="captureAndShare()"]');
     
     if(!btn) return;
-    
     const originalText = btn.innerText;
     btn.innerText = "⏳ Processing..."; 
     btn.disabled = true;
 
-    // Clone for Capture
+    // Clone & Clean
     const clone = source.cloneNode(true);
-    
-    // Clean up clone (Hide buttons)
     const actions = clone.querySelector('.download-actions') || clone.querySelector('div[style*="text-align:center"]');
     if(actions) actions.style.display = 'none';
     const closeBtn = clone.querySelector('button[onclick*="close"]');
     if(closeBtn) closeBtn.style.display = 'none';
 
-    // Set A4 Style
+    // A4 Styles
     clone.style.width = '794px'; 
     clone.style.padding = '40px';
     clone.style.background = 'white';
@@ -783,7 +790,7 @@ window.captureAndShare = function() {
     clone.style.top = '0'; 
     clone.style.zIndex = '-100'; 
     
-    // Fix Tables
+    // Table Fixes
     const tableWrap = clone.querySelector('.table-wrapper');
     if(tableWrap) { tableWrap.style.overflow = 'visible'; tableWrap.style.border = 'none'; }
     const table = clone.querySelector('table');
