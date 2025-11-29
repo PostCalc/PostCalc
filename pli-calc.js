@@ -1,4 +1,4 @@
-/* pli-calc.js - Precise Dak Sewa Logic */
+/* pli-calc.js - Precise Dak Sewa Logic (All Frequencies) */
 const PLI_Engine = {
     generateTable: (schemeCode, dobStr, sa, freqMode = 1) => {
         const data = PLI_DATA[schemeCode];
@@ -26,7 +26,7 @@ const PLI_Engine = {
                     let rateTable = data.rates[matAge];
                     let rate = rateTable ? rateTable[anb] : null;
 
-                    // Fallback for missing specific ages in demo data
+                    // Fallback for missing specific ages
                     if (!rate && rateTable) {
                         let keys = Object.keys(rateTable).map(Number);
                         if(keys.length > 0) {
@@ -37,27 +37,27 @@ const PLI_Engine = {
 
                     if (rate) {
                         // 3. BASE PREMIUM CALCULATION
+                        // Rate is per 1000 SA.
                         let basePrem = (sa / 1000) * rate;
                         
-                        /* --- DAK SEWA PRECISE MULTIPLIERS --- */
-                        // Derived from Official PDF Sources (Ver 8)
-                        // This logic accounts for the specific discounts India Post applies
+                        /* --- PRECISE DAK SEWA MULTIPLIERS --- */
+                        // Derived from Official Tables (Sources 31, 45, 49)
                         let multiplier = freqMode;
                         
                         if (freqMode === 12) {
-                            multiplier = 11.645; // Yearly Discount (~2.96%)
+                            multiplier = 11.645; // Yearly Discount
                         } else if (freqMode === 6) {
-                            multiplier = 5.914;  // Half-Yearly Discount (~1.43%)
+                            multiplier = 5.914;  // Half-Yearly Discount
                         } else if (freqMode === 3) {
-                            multiplier = 2.996;  // Quarterly Discount (~0.13%)
+                            multiplier = 2.996;  // Quarterly Discount
                         }
                         // Monthly remains 1.0
 
                         let freqPrem = Math.round(basePrem * multiplier);
 
                         /* --- REBATE LOGIC --- */
-                        // Rule: ₹1 per ₹20k per MONTH. 
-                        // The app calculates total rebate by multiplying the monthly rebate by frequency.
+                        // Rule: ₹1 per ₹20k per MONTH.
+                        // We multiply the monthly rebate by the frequency mode (e.g. 12 for yearly).
                         let rebatePerMonth = 0;
                         if (sa >= data.rebate_step) {
                             rebatePerMonth = Math.floor(sa / data.rebate_step) * data.rebate_val;
@@ -69,7 +69,6 @@ const PLI_Engine = {
                         if(netPrem < 0) netPrem = 0;
 
                         /* --- BONUS --- */
-                        // Bonus = (SA/1000) * Rate * Years
                         let totalBonus = (sa / 1000) * data.bonus_rate * term;
                         let maturityVal = sa + totalBonus;
 
