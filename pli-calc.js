@@ -1,33 +1,27 @@
-/* pli-calc.js - Full Table Logic Engine */
+/* pli-calc.js */
 const PLI_Engine = {
-    // Generates the full comparison table for all maturity ages
     generateTable: (schemeCode, dobStr, sa, freqMode = 1) => {
         const data = PLI_DATA[schemeCode];
         if (!data) return { error: "Scheme data not found." };
 
-        // 1. Calculate Age Next Birthday (ANB)
         const dob = new Date(dobStr);
         const today = new Date();
         let age = today.getFullYear() - dob.getFullYear();
         const m = today.getMonth() - dob.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--; 
-        const anb = age + 1; // Postal Age Rule (Next Birthday)
+        const anb = age + 1; 
 
         if (anb < 19 || anb > 55) return { error: `Age ${anb} is not eligible (19-55).` };
 
         let tableRows = [];
 
-        // 2. Loop through ALL Maturity Ages (35, 40... 60)
         data.maturity_ages.forEach(matAge => {
             let term = matAge - anb;
-            
-            // Only show rows where term is valid (e.g. at least 5 years)
             if (term >= 5) {
-                // Get Rate (Handle missing ages with fallback)
                 let rateTable = data.rates[matAge];
                 let rate = rateTable ? rateTable[anb] : null;
 
-                // Fallback: If exact age missing, use closest (Demo purpose)
+                // Fallback Logic
                 if (!rate && rateTable) {
                     let keys = Object.keys(rateTable).map(Number);
                     if(keys.length > 0) {
@@ -37,24 +31,21 @@ const PLI_Engine = {
                 }
 
                 if (rate) {
-                    // 3. Math Logic
                     let basePrem = (sa / 1000) * rate;
                     
-                    // Frequency: 1=Month, 3=Quart, 6=Half, 12=Year
+                    // Frequency Calculation (Base * Frequency)
                     let freqPrem = basePrem * freqMode;
 
-                    // Rebate: ₹1 per 20k per month (Standard Rule)
+                    // Rebate Logic: ₹1 per ₹20k per MONTH (Scaled by Frequency)
                     let rebatePerMonth = 0;
                     if (sa >= data.rebate_step) {
                         rebatePerMonth = Math.floor(sa / data.rebate_step) * data.rebate_val;
                     }
                     let totalRebate = rebatePerMonth * freqMode;
 
-                    // Net Premium (0% GST)
                     let netPrem = freqPrem - totalRebate;
                     if(netPrem < 0) netPrem = 0;
 
-                    // Bonus
                     let totalBonus = (sa / 1000) * data.bonus_rate * term;
                     let maturityVal = sa + totalBonus;
 
