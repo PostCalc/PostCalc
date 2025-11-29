@@ -1,4 +1,4 @@
-/* pli-calc.js */
+/* pli-calc.js - Dak Sewa Logic (All Frequencies) */
 const PLI_Engine = {
     generateTable: (schemeCode, dobStr, sa, freqMode = 1) => {
         const data = PLI_DATA[schemeCode];
@@ -15,7 +15,6 @@ const PLI_Engine = {
 
         let tableRows = [];
 
-        // Loop through all maturity ages
         if(data.maturity_ages) {
             data.maturity_ages.forEach(matAge => {
                 let term = matAge - anb;
@@ -34,17 +33,36 @@ const PLI_Engine = {
 
                     if (rate) {
                         let basePrem = (sa / 1000) * rate;
-                        let freqPrem = basePrem * freqMode;
+                        
+                        /* --- DAK SEWA MULTIPLIERS --- */
+                        // Logic derived from Official PDF Sources (Ver 8)
+                        let multiplier = freqMode;
+                        
+                        if (freqMode === 12) {
+                            multiplier = 11.645; // Yearly Discount (~3%)
+                        } else if (freqMode === 6) {
+                            multiplier = 5.914;  // Half-Yearly Discount (~1.4%)
+                        } else if (freqMode === 3) {
+                            multiplier = 2.996;  // Quarterly Discount (~0.1%)
+                        }
+                        // Monthly remains 1.0
 
+                        let freqPrem = Math.round(basePrem * multiplier);
+
+                        /* --- REBATE LOGIC --- */
+                        // Rebate is ₹1 per ₹20k per MONTH. 
+                        // The app multiplies this fixed rebate by the frequency.
                         let rebatePerMonth = 0;
                         if (sa >= data.rebate_step) {
                             rebatePerMonth = Math.floor(sa / data.rebate_step) * data.rebate_val;
                         }
-                        let totalRebate = rebatePerMonth * freqMode;
+                        let totalRebate = rebatePerMonth * freqMode; 
 
+                        /* --- NET PREMIUM --- */
                         let netPrem = freqPrem - totalRebate;
                         if(netPrem < 0) netPrem = 0;
 
+                        /* --- BONUS --- */
                         let totalBonus = (sa / 1000) * data.bonus_rate * term;
                         let maturityVal = sa + totalBonus;
 
