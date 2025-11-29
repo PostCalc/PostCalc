@@ -1,9 +1,10 @@
-/* pli-calc.js - Dak Sewa Logic (All Frequencies) */
+/* pli-calc.js - Dak Sewa Logic (Exact Multipliers) */
 const PLI_Engine = {
     generateTable: (schemeCode, dobStr, sa, freqMode = 1) => {
         const data = PLI_DATA[schemeCode];
         if (!data) return { error: "Scheme data not found." };
 
+        // 1. AGE LOGIC (Next Birthday)
         const dob = new Date(dobStr);
         const today = new Date();
         let age = today.getFullYear() - dob.getFullYear();
@@ -15,14 +16,15 @@ const PLI_Engine = {
 
         let tableRows = [];
 
+        // 2. Loop through all Maturity Ages
         if(data.maturity_ages) {
             data.maturity_ages.forEach(matAge => {
                 let term = matAge - anb;
                 if (term >= 5) {
+                    // 3. Rate Lookup with Fallback
                     let rateTable = data.rates[matAge];
                     let rate = rateTable ? rateTable[anb] : null;
 
-                    // Fallback Logic
                     if (!rate && rateTable) {
                         let keys = Object.keys(rateTable).map(Number);
                         if(keys.length > 0) {
@@ -32,26 +34,24 @@ const PLI_Engine = {
                     }
 
                     if (rate) {
+                        // 4. Base Premium Calculation
                         let basePrem = (sa / 1000) * rate;
                         
                         /* --- DAK SEWA MULTIPLIERS --- */
-                        // Logic derived from Official PDF Sources (Ver 8)
                         let multiplier = freqMode;
-                        
                         if (freqMode === 12) {
-                            multiplier = 11.645; // Yearly Discount (~3%)
+                            multiplier = 11.645; // Yearly Discount
                         } else if (freqMode === 6) {
-                            multiplier = 5.914;  // Half-Yearly Discount (~1.4%)
+                            multiplier = 5.914;  // Half-Yearly Discount
                         } else if (freqMode === 3) {
-                            multiplier = 2.996;  // Quarterly Discount (~0.1%)
+                            multiplier = 2.996;  // Quarterly Discount
                         }
                         // Monthly remains 1.0
 
                         let freqPrem = Math.round(basePrem * multiplier);
 
                         /* --- REBATE LOGIC --- */
-                        // Rebate is ₹1 per ₹20k per MONTH. 
-                        // The app multiplies this fixed rebate by the frequency.
+                        // Rebate is fixed per month, then multiplied by frequency
                         let rebatePerMonth = 0;
                         if (sa >= data.rebate_step) {
                             rebatePerMonth = Math.floor(sa / data.rebate_step) * data.rebate_val;
