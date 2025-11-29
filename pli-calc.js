@@ -1,4 +1,4 @@
-/* pli-calc.js - Dak Sewa Logic (All Frequencies) */
+/* pli-calc.js - Derived from User Screenshots (1L Table) */
 const PLI_Engine = {
     generateTable: (schemeCode, dobStr, sa, freqMode = 1) => {
         const data = PLI_DATA[schemeCode];
@@ -22,7 +22,7 @@ const PLI_Engine = {
                     let rateTable = data.rates[matAge];
                     let rate = rateTable ? rateTable[anb] : null;
 
-                    // Fallback Logic
+                    // Fallback
                     if (!rate && rateTable) {
                         let keys = Object.keys(rateTable).map(Number);
                         if(keys.length > 0) {
@@ -32,32 +32,36 @@ const PLI_Engine = {
                     }
 
                     if (rate) {
-                        // 1. BASE PREMIUM CALCULATION
-                        // Rate is per 1000 SA.
-                        let basePrem = (sa / 1000) * rate;
+                        // 1. BASE MONTHLY PREMIUM (Rate is per 1000)
+                        let baseMonthly = (sa / 1000) * rate;
                         
-                        // 2. DAK SEWA DISCOUNT MULTIPLIERS
-                        let multiplier = freqMode;
-                        if (freqMode === 12) multiplier = 11.645;
-                        else if (freqMode === 6) multiplier = 5.914;
-                        else if (freqMode === 3) multiplier = 2.996;
-                        // Monthly = 1.0
+                        /* --- EXACT MULTIPLIERS FROM YOUR SCREENSHOTS --- */
+                        // Yearly: 2096 / 180 = 11.64444
+                        // Half: 1064 / 180 = 5.91111
+                        // Quart: 540 / 180 = 3.0
+                        
+                        let multiplier = 1;
+                        if (freqMode === 12) multiplier = 11.64444444; 
+                        else if (freqMode === 6) multiplier = 5.91111111;
+                        else if (freqMode === 3) multiplier = 3.0;
 
-                        let freqPrem = Math.round(basePrem * multiplier);
+                        // Calculate Frequency Premium & Round it
+                        let freqPrem = Math.round(baseMonthly * multiplier);
 
-                        // 3. REBATE LOGIC
-                        // Rule: ₹1 per ₹20k per MONTH. Multiplied by frequency.
+                        /* --- REBATE LOGIC --- */
+                        // Rebate is ₹1 per ₹20k per MONTH.
+                        // Multiply monthly rebate by freqMode (e.g. 12 for yearly).
                         let rebatePerMonth = 0;
                         if (sa >= data.rebate_step) {
                             rebatePerMonth = Math.floor(sa / data.rebate_step) * data.rebate_val;
                         }
-                        let totalRebate = rebatePerMonth * freqMode; 
+                        let totalRebate = rebatePerMonth * freqMode;
 
-                        // 4. NET PREMIUM
+                        /* --- NET PREMIUM --- */
                         let netPrem = freqPrem - totalRebate;
                         if(netPrem < 0) netPrem = 0;
 
-                        // 5. BONUS
+                        /* --- BONUS --- */
                         let totalBonus = (sa / 1000) * data.bonus_rate * term;
                         let maturityVal = sa + totalBonus;
 
@@ -74,7 +78,6 @@ const PLI_Engine = {
                 }
             });
         }
-
         return { anb: anb, rows: tableRows, sa: sa };
     }
 };
