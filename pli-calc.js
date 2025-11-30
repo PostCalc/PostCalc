@@ -25,7 +25,7 @@ const PLI_Engine = {
                     let rateTable = data.rates[matAge];
                     let rate = rateTable ? rateTable[anb] : null;
 
-                    // Fallback logic
+                    // Fallback
                     if (!rate && rateTable) {
                         let keys = Object.keys(rateTable).map(Number);
                         if(keys.length > 0) {
@@ -38,11 +38,12 @@ const PLI_Engine = {
                         // 1. BASE MONTHLY PREMIUM (Gross)
                         let baseMonthly = (sa / 1000) * rate;
                         
-                        /* --- EXACT DAK SEWA MULTIPLIERS --- */
-                        // Derived from your screenshots
+                        /* --- EXACT DAK SEWA MULTIPLIERS [Source: User Screenshots] --- */
+                        // Derived from 10L Breakdown Table
                         let multiplier = 1;
                         if (freqMode === 12) {
-                            multiplier = 11.645; // Yearly (Fixes Base Premium)
+                            // Precise Factor that hits 45,980 and 20,360 exactly
+                            multiplier = 11.6445; 
                         } else if (freqMode === 6) {
                             multiplier = 5.914;  // Half-Yearly
                         } else if (freqMode === 3) {
@@ -50,6 +51,7 @@ const PLI_Engine = {
                         }
 
                         // Calculate Yearly/Half-Yearly Base Premium
+                        // Dak Sewa uses standard rounding here
                         let freqPrem = Math.round(baseMonthly * multiplier);
 
                         // 3. REBATE LOGIC
